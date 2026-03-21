@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldNet</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #21262d;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --text: #e6edf3;
+    --muted: #7d8590;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 360px;
+    min-height: 480px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 700;
+  }
+
+  .brand-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #3fb950, #58a6ff);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 #3fb95066; }
+    50% { box-shadow: 0 0 0 4px #3fb95033; }
+  }
+
+  /* SITE STATUS CARD */
+  .site-card {
+    margin: 12px;
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid;
+    transition: all 0.3s;
+  }
+
+  .site-card.safe    { background: #3fb95010; border-color: #3fb95030; }
+  .site-card.warning { background: #d2992210; border-color: #d2992230; }
+  .site-card.danger  { background: #f8514910; border-color: #f8514930; }
+  .site-card.loading { background: #58a6ff10; border-color: #58a6ff30; }
+
+  .site-card-top {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+
+  .risk-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .safe    .risk-icon { background: #3fb95020; }
+  .warning .risk-icon { background: #d2992220; }
+  .danger  .risk-icon { background: #f8514920; }
+  .loading .risk-icon { background: #58a6ff20; }
+
+  .site-info h3 {
+    font-size: 14px; font-weight: 600; margin-bottom: 2px;
+  }
+
+  .safe    .site-info h3 { color: var(--green); }
+  .warning .site-info h3 { color: var(--yellow); }
+  .danger  .site-info h3 { color: var(--red); }
+  .loading .site-info h3 { color: var(--blue); }
+
+  .site-info .domain {
+    color: var(--muted); font-size: 11px;
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 220px;
+  }
+
+  /* SCORE BAR */
+  .score-section {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .score-bar-wrap {
+    flex: 1; height: 6px;
+    background: var(--border);
+    border-radius: 3px; overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%; border-radius: 3px;
+    transition: width 0.8s ease-out;
+  }
+
+  .score-num {
+    font-size: 12px; font-weight: 700;
+    font-family: monospace; min-width: 38px; text-align: right;
+  }
+
+  /* CHECKS */
+  .checks {
+    padding: 0 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .check {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .check-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 500;
+  }
+
+  .badge {
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 12px;
+  }
+
+  .badge.ok   { background: #3fb95020; color: var(--green); border: 1px solid #3fb95040; }
+  .badge.bad  { background: #f8514920; color: var(--red);   border: 1px solid #f8514940; }
+  .badge.warn { background: #d2992220; color: var(--yellow);border: 1px solid #d2992240; }
+  .badge.info { background: #58a6ff20; color: var(--blue);  border: 1px solid #58a6ff40; }
+
+  /* TOGGLES SECTION */
+  .section-title {
+    padding: 8px 16px 4px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .toggles {
+    padding: 0 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .toggle-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .toggle-row:hover { background: var(--surface2); }
+
+  .toggle-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+  }
+
+  .toggle-switch {
+    width: 36px; height: 18px;
+    border-radius: 9px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch.on  { background: var(--green); }
+  .toggle-switch.off { background: var(--border); }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    background: white; border-radius: 50%;
+    top: 3px; transition: left 0.2s;
+  }
+
+  .toggle-switch.on::after  { left: 21px; }
+  .toggle-switch.off::after { left: 3px; }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; padding: 0 12px; margin-bottom: 12px;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px;
+    text-align: center;
+  }
+
+  .stat-box .num {
+    font-size: 20px; font-weight: 700;
+    font-family: monospace; display: block;
+    line-height: 1.2;
+  }
+
+  .stat-box .lbl {
+    font-size: 9px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .footer span { font-size: 10px; color: var(--muted); }
+
+  .btn-report {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px; padding: 4px 10px;
+    border-radius: 6px; cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-report:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* LOADING SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+    gap: 4px;
+  }
+
+  .tab {
+    padding: 8px 12px;
+    font-size: 11px; font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--blue);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* HISTORY */
+  .history-list {
+    padding: 8px 12px;
+    display: flex; flex-direction: column; gap: 5px;
+    max-height: 220px; overflow-y: auto;
+  }
+
+  .history-item {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px; font-size: 11px;
+  }
+
+  .history-domain {
+    overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; max-width: 200px;
+    color: var(--muted);
+  }
+
+  /* ABOUT */
+  .about {
+    padding: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .about a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">🛡️</div>
+    ShieldNet
+  </div>
+  <div class="status-dot" id="statusDot"></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="main">🔍 Sitio Actual</div>
+  <div class="tab" data-tab="history">📋 Historial</div>
+  <div class="tab" data-tab="settings">⚙️ Config</div>
+</div>
+
+<!-- TAB: MAIN -->
+<div class="tab-content active" id="tab-main">
+  <!-- SITE STATUS -->
+  <div class="site-card loading" id="siteCard">
+    <div class="site-card-top">
+      <div class="risk-icon" id="riskIcon">
+        <div class="spinner"></div>
+      </div>
+      <div class="site-info">
+        <h3 id="riskTitle">Analizando...</h3>
+        <div class="domain" id="domainText">Cargando información del sitio</div>
+      </div>
+    </div>
+    <div class="score-section">
+      <div class="score-bar-wrap">
+        <div class="score-bar" id="scoreBar" style="width: 0%; background: #58a6ff"></div>
+      </div>
+      <div class="score-num" id="scoreNum" style="color: #58a6ff">--/100</div>
+    </div>
+  </div>
+
+  <!-- CHECKS LIST -->
+  <div class="checks" id="checksList">
+    <div class="check">
+      <div class="check-left"><span>🔄</span> Verificando protocolo...</div>
+      <span class="badge info">...</span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="section-title">Sesión actual</div>
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="num" id="statBlocked" style="color: var(--red)">0</span>
+      <span class="lbl">Bloqueados</span>
+    </div>
+    <div class="stat-box">
+      <span class="num" id="statSuspicious" style="color: var(--yellow)">0</span>
+      <span class="lbl">Sospechosos</span>
+    </div>
+    <div class="stat-box">
+      <span class="num" id="statSafe" style="color: var(--green)">0</span>
+      <span class="lbl">Seguros</span>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: HISTORY -->
+<div class="tab-content" id="tab-history">
+  <div class="history-list" id="historyList">
+    <div style="color: var(--muted); text-align: center; padding: 20px; font-size: 12px;">
+      Sin historial en esta sesión
+    </div>
+  </div>
+</div>
+
+<!-- TAB: SETTINGS -->
+<div class="tab-content" id="tab-settings">
+  <div class="section-title" style="padding-top:12px">Módulos de protección</div>
+  <div class="toggles">
+    <div class="toggle-row" id="toggle-protection">
+      <div class="toggle-left">🛡️ <span>Protección activa</span></div>
+      <div class="toggle-switch on" data-setting="protection"></div>
+    </div>
+    <div class="toggle-row" id="toggle-adblocker">
+      <div class="toggle-left">🚫 <span>Bloqueador de anuncios</span></div>
+      <div class="toggle-switch on" data-setting="adblocker"></div>
+    </div>
+    <div class="toggle-row" id="toggle-trackers">
+      <div class="toggle-left">👁️ <span>Bloquear trackers</span></div>
+      <div class="toggle-switch on" data-setting="trackers"></div>
+    </div>
+    <div class="toggle-row" id="toggle-phishing">
+      <div class="toggle-left">📧 <span>Detector de phishing</span></div>
+      <div class="toggle-switch on" data-setting="phishing"></div>
+    </div>
+    <div class="toggle-row" id="toggle-notifications">
+      <div class="toggle-left">🔔 <span>Notificaciones</span></div>
+      <div class="toggle-switch on" data-setting="notifications"></div>
+    </div>
+  </div>
+
+  <div class="about">
+    <strong style="color: var(--text)">ShieldNet v1.0.0</strong><br>
+    Extensión de seguridad web desarrollada como proyecto escolar.<br><br>
+    Usa: Google Safe Browsing API, listas EasyList, PhishTank.<br><br>
+    <span style="color: var(--text)">APIs necesarias:</span><br>
+    • Google Safe Browsing (gratuita)<br>
+    • WhoisXML API (gratuita)<br><br>
+    Configurar las API keys en <code style="color: var(--purple)">background.js</code>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span id="footerStatus">● Protección activa</span>
+  <button class="btn-report" id="btnReport">Reportar sitio</button>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
