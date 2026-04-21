@@ -1,0 +1,103 @@
+name: Actualizar Catálogo Adidas
+
+on:
+  # ── Solo manual desde GitHub ─────────────────────────────────
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Modo de actualización"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - solo-agotados
+          - lote-100
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+
+    steps:
+      - name: ⬇️ Checkout del repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Instalar dependencias
+        run: |
+          pip install requests cloudscraper beautifulsoup4
+
+      - name: 🔄 Actualizar catálogo
+        run: |
+          MODE="${{ github.event.inputs.modo || 'normal' }}"
+          echo "Modo: $MODE"
+          if [ "$MODE" = "solo-agotados" ]; then
+            python actualizador_ligero.py --solo-agotados
+          elif [ "$MODE" = "lote-100" ]; then
+            python actualizador_ligero.py --limite 100
+          else
+            TOTAL=$(python -c "import json; d=json.load(open('catalogo_adidas.json')); print(len(d))")
+            echo "Total productos: $TOTAL"
+            LOTE=500
+            DESDE=0
+            while [ $DESDE -lt $TOTAL ]; do
+              echo "--- Procesando desde $DESDE ---"
+              python actualizador_ligero.py --desde $DESDE --limite $LOTE
+              DESDE=$((DESDE + LOTE))
+            done
+          fi
+
+      - name: 📋 Resumen de cambios
+        run: |
+          if [ -f "cambios_catalogo.json" ]; then
+            echo "=== Productos con cambios ==="
+            python -c "
+          import json
+          with open('cambios_catalogo.json') as f:
+              cambios = json.load(f)
+          print(f'Total cambios: {len(cambios)}')
+          for c in cambios[:10]:
+              print(f'  - {c[\"nombre\"][:50]}')
+              if 'cambios' in c:
+                  if 'precio' in c['cambios']:
+                      print(f'    {c[\"cambios\"][\"precio\"][\"antes\"]} -> {c[\"cambios\"][\"precio\"][\"ahora\"]}')
+              elif c.get('tipo') == 'INACTIVO':
+                  print(f'    Producto inactivo')
+          if len(cambios) > 10:
+              print(f'  ... y {len(cambios)-10} mas')
+            "
+          else
+            echo "Sin cambios detectados"
+          fi
+
+      - name: 💾 Guardar catálogo actualizado en el repo
+        run: |
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add catalogo_adidas.json
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el catalogo"
+          else
+            TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M UTC")
+            CAMBIOS=0
+            if [ -f "cambios_catalogo.json" ]; then
+              CAMBIOS=$(python -c "import json; print(len(json.load(open('cambios_catalogo.json'))))")
+            fi
+            git commit -m "Catalogo actualizado - $TIMESTAMP ($CAMBIOS productos con cambios)"
+            git push
+          fi
+
+      - name: 🧹 Limpiar archivos temporales
+        if: always()
+        run: |
+          rm -f catalogo_adidas_backup.json actualizador.log
+          git add -A
+          git diff --staged --quiet || git commit -m "Limpieza de archivos temporales" && git push || true
