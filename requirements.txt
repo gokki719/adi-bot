@@ -1,0 +1,7 @@
+# Bot webhook (Render)
+flask
+gunicorn
+
+# Actualizador ligero (GitHub Actions)
+requests
+beautifulsoup4
